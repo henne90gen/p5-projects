@@ -1,8 +1,10 @@
 var agents = []
+var targetForceSlider
 
 function setup() {
-    createCanvas(500, 500)
-    for (let i = 0; i < 500; i++) {
+    createCanvas(400, 400)
+    targetForceSlider = createSlider(0.01, 2, 1, 0.01)
+    for (let i = 0; i < 250; i++) {
         let pos = createVector(random(width), random(height))
         agents.push(new Agent(pos))
     }
@@ -10,12 +12,23 @@ function setup() {
 
 function draw() {
     background(0)
-    let target = createVector(width / 2, height / 2)
+    let targetForce = targetForceSlider.value()
+    let target = new Target(createVector(width / 2, height / 2), targetForce)
+    let antiTarget = new Target(createVector(mouseX, mouseY), 2)
     for (let index in agents) {
         let agent = agents[index]
-        agent.steer(target)
+        agent.seek(target)
+        agent.flee(antiTarget)
+        agent.avoidWall(1)
         agent.update()
         agent.render()
+    }
+}
+
+class Target {
+    constructor(pos, maxForce) {
+        this.position = pos
+        this.maxForce = maxForce
     }
 }
 
@@ -25,21 +38,50 @@ class Agent {
         this.velocity = createVector(0, 0)
         this.acceleration = createVector(0, 0)
         this.maxSpeed = 5
-        this.maxForce = 0.1
+        this.minDistance = 50
     }
 
-    steer(target) {
-        let desired = p5.Vector.sub(target, this.position)
-        if (desired.mag() > this.maxSpeed) {
-            desired.normalize()
-            desired.mult(this.maxSpeed)
-        }
+    steer(desired, maxForce) {
         let steer = p5.Vector.sub(desired, this.velocity)
-        if (steer.mag() > this.maxForce) {
+        if (steer.mag() > maxForce) {
             steer.normalize()
-            steer.mult(this.maxForce)
+            steer.mult(maxForce)
         }
         this.acceleration.add(steer)
+    }
+
+    avoidWall(maxForce) {
+        let desired = createVector(this.velocity.x, this.velocity.y)
+        if (this.position.x < 25) {
+            desired.x = this.maxSpeed
+        }
+        if (this.position.x > width - 25) {
+            desired.x = -this.maxSpeed
+        }
+        if (this.position.y < 25) {
+            desired.y = this.maxSpeed
+        }
+        if (this.position.y > height - 25) {
+            desired.y = -this.maxSpeed
+        }
+        this.steer(desired, maxForce)
+    }
+
+    seek(target) {
+        let desired = p5.Vector.sub(target.position, this.position)
+        desired.mult(this.maxSpeed)
+        this.steer(desired, target.maxForce)
+    }
+
+    flee(target) {
+        let desired = p5.Vector.sub(target.position, this.position)
+        if (desired.mag() > this.minDistance) {
+            return
+        }
+        desired.mult(-1)
+        desired.mult(this.maxSpeed)
+
+        this.steer(desired, target.maxForce)
     }
 
     update() {
