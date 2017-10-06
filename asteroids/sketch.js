@@ -161,6 +161,7 @@ function mousePressed() {
 
 function keyPressed() {
     if (keyCode == 32) {
+        // space
         spawnBullet()
     } else if (keyCode == 38) {
         // up
