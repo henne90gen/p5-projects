@@ -18,9 +18,12 @@ function draw() {
     } else {
         player.update()
 
-        updateBullets()
+        update(bullets)
 
-        updateAsteroids()
+        update(asteroids)
+        while (asteroids.length < 10) {
+            spawnAsteroid()
+        }
 
         checkCollsions()
     }
@@ -99,24 +102,12 @@ class Circle {
     }
 }
 
-function updateBullets() {
-    for (let index in bullets) {
-        let bullet = bullets[index]
+function update(arr) {
+    for (let index in arr) {
+        let bullet = arr[index]
         if (bullet.update()) {
-            bullets.splice(index, 1)
+            arr.splice(index, 1)
         }
-    }
-}
-
-function updateAsteroids() {
-    for (let index in asteroids) {
-        let asteroid = asteroids[index]
-        if (asteroid.update()) {
-            asteroids.splice(index, 1)
-        }
-    }
-    while (asteroids.length < 10) {
-        spawnAsteroid()
     }
 }
 
