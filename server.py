@@ -5,7 +5,10 @@ import os
 import sys
 
 HOST_NAME = 'localhost'
-PORT_NUMBER = 8080  # Maybe set this to 9000.
+PORT_NUMBER = 8080
+if len(sys.argv) != 2:
+    print("Specify the project you want to host")
+    sys.exit(1)
 BASE_PATH = sys.argv[1]
 
 
