@@ -18,9 +18,16 @@ function draw() {
     } else {
         player.update()
 
-        update(bullets)
+        for (let index in bullets) {
+            if (bullets[index].update(false)) {
+                bullets.splice(index, 1)
+                index--;
+            }
+        }
 
-        update(asteroids)
+        for (let index in asteroids) {
+            asteroids[index].update(true)
+        }
         while (asteroids.length < 10) {
             spawnAsteroid()
         }
@@ -43,8 +50,10 @@ class Player {
     constructor() {
         this.position = createVector(100, 150)
         this.direction = createVector(0, 1)
-        this.speed = 0
-        this.rot = 0
+        this.velocity = createVector(0, 0)
+        this.acceleration = createVector(0, 0)
+        this.angle = 0
+        this.thrustForce = -0.1
     }
 
     checkCollsion(circle) {
@@ -53,10 +62,34 @@ class Player {
         return distance < (15 + circle.radius) / 2
     }
 
+    thrust(b) {
+        this.thrusting = b
+    }
+
+    rotate(angle) {
+        this.angle = angle
+    }
+
     update() {
-        this.direction.rotate(this.rot)
-        let dir = createVector(this.direction.x, this.direction.y)
-        this.position.add(dir.mult(this.speed))
+        this.direction.rotate(this.angle)
+        if (this.thrusting) {
+            this.acceleration = this.direction.copy().normalize().mult(this.thrustForce)
+        } else {
+            this.acceleration = createVector(0, 0)
+        }
+        this.velocity.add(this.acceleration)
+        this.velocity.mult(0.99)
+        this.position.add(this.velocity)
+        if (this.position.x < 0) {
+            this.position.x = width
+        } else if (this.position.x > width) {
+            this.position.x = 0
+        }
+        if (this.position.y < 0) {
+            this.position.y = height
+        } else if (this.position.y > height) {
+            this.position.y = 0
+        }
     }
 
     render() {
@@ -85,29 +118,32 @@ class Circle {
     checkCollsion(other) {
         let otherPos = createVector(other.position.x, other.position.y)
         let distance = otherPos.sub(this.position).mag()
-        return distance < (this.radius + other.radius) / 2
+        return distance < this.radius + other.radius
     }
 
-    update() {
+    update(wrapping) {
         let dir = createVector(this.direction.x, this.direction.y)
         this.position.add(dir.mult(this.speed))
-        // return true if the cirlce is far off screen
-        return (this.position.x > width + 100 || this.position.x < -100 || this.position.y > height + 100 || this.position.y < -100)
+        if (wrapping) {
+            if (this.position.x < -this.radius) {
+                this.position.x = width + this.radius
+            } else if (this.position.x > width + this.radius) {
+                this.position.x = -this.radius
+            }
+            if (this.position.y < -this.radius) {
+                this.position.y = height + this.radius
+            } else if (this.position.y > height + this.radius) {
+                this.position.y = -this.radius
+            }
+        } else {
+            return (this.position.x < -this.radius || this.position.x > width + this.radius || this.position.y < -this.radius || this.position.y > height + this.radius)
+        }
     }
 
     render() {
         fill(this.color)
         noStroke()
-        ellipse(this.position.x, this.position.y, this.radius, this.radius)
-    }
-}
-
-function update(arr) {
-    for (let index in arr) {
-        let bullet = arr[index]
-        if (bullet.update()) {
-            arr.splice(index, 1)
-        }
+        ellipse(this.position.x, this.position.y, this.radius * 2, this.radius * 2)
     }
 }
 
@@ -118,7 +154,9 @@ function checkCollsions() {
             let bullet = bullets[bulletIndex]
             if (bullet.checkCollsion(asteroid)) {
                 bullets.splice(bulletIndex, 1)
+                bulletIndex--;
                 asteroids.splice(asteroidIndex, 1)
+                asteroidIndex--;
             }
         }
         if (player.checkCollsion(asteroid)) {
@@ -142,16 +180,16 @@ function spawnAsteroid() {
     let pos = createVector(x, y)
     let dir = createVector(random(-1, 1), random(-1, 1))
     let speed = random(0.1, 3)
-    let size = random(5, 30)
+    let size = random(2.5, 15)
 
     let asteroid = new Circle(pos, dir, speed, size, color(100, 100, 100))
     asteroids.push(asteroid)
 }
 
 function spawnBullet() {
-    let pos = createVector(player.position.x, player.position.y)
-    let dir = createVector(player.direction.x, player.direction.y)
-    let bullet = new Circle(pos, dir, bulletSpeed, 10, color(255, 255, 255))
+    let pos = player.position.copy()
+    let dir = player.direction.copy()
+    let bullet = new Circle(pos, dir, bulletSpeed, 5, color(255, 255, 255))
     bullets.push(bullet)
 }
 
@@ -165,24 +203,20 @@ function keyPressed() {
         spawnBullet()
     } else if (keyCode == 38) {
         // up
-        player.speed--
+        player.thrust(true)
     } else if (keyCode == 37) {
         // left
-        player.rot = -0.1
+        player.rotate(-0.1)
     } else if (keyCode == 39) {
         // right
-        player.rot = 0.1
-    } else if (keyCode == 40) {
-        // down
-        player.speed++
-    }
-    if (player.speed > 0) {
-        player.speed = 0
+        player.rotate(0.1)
     }
 }
 
 function keyReleased() {
     if (keyCode == 37 || keyCode == 39) {
-        player.rot = 0
+        player.rotate(0)
+    } else if (keyCode == UP_ARROW) {
+        player.thrust(false)
     }
 }
