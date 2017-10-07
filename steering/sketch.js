@@ -1,44 +1,51 @@
 var agents = []
-var targetForceSlider
+var mouseTargetForceSlider, positionTargetForceSlider
 
 function setup() {
     createCanvas(400, 400)
-    targetForceSlider = createSlider(0.01, 2, 1, 0.01)
-    for (let i = 0; i < 250; i++) {
-        let pos = createVector(random(width), random(height))
+    mouseTargetForceSlider = createSlider(0.01, 2, 0.5, 0.01)
+    positionTargetForceSlider = createSlider(0.01, 2, 0.5, 0.01)
+    for (let i = 0; i < 4*4; i++) {
+        let x = i%4 * 100 + 50
+        let y = Math.floor(i/4) * 100 + 50
+        let pos = createVector(x, y)
         agents.push(new Agent(pos))
     }
 }
 
 function draw() {
     background(0)
-    let targetForce = targetForceSlider.value()
-    let target = new Target(createVector(width / 2, height / 2), targetForce)
-    let antiTarget = new Target(createVector(mouseX, mouseY), 2)
+    let mouseTargetForce = mouseTargetForceSlider.value()
+    let positionTargetForce = positionTargetForceSlider.value()
+    let mouseTarget = new Target(createVector(mouseX, mouseY), mouseTargetForce)
     for (let index in agents) {
         let agent = agents[index]
-        agent.seek(target)
-        agent.flee(antiTarget)
-        agent.avoidWall(1)
+        let positionTarget = new Target(agent.startPosition.copy(), positionTargetForce)
+        agent.seek(positionTarget)
+        agent.flee(mouseTarget)
         agent.update()
         agent.render()
     }
 }
 
 class Target {
-    constructor(pos, maxForce) {
-        this.position = pos
+    constructor(pos, maxForce, minDistance) {
+        this.position = pos.copy()
         this.maxForce = maxForce
+        if (!minDistance) {
+            minDistance = 1000
+        }
+        this.minDistance = minDistance
     }
 }
 
 class Agent {
     constructor(pos) {
-        this.position = pos
+        this.position = pos.copy()
+        this.startPosition = pos.copy()
         this.velocity = createVector(0, 0)
         this.acceleration = createVector(0, 0)
         this.maxSpeed = 5
-        this.minDistance = 50
     }
 
     steer(desired, maxForce) {
@@ -75,7 +82,7 @@ class Agent {
 
     flee(target) {
         let desired = p5.Vector.sub(target.position, this.position)
-        if (desired.mag() > this.minDistance) {
+        if (desired.mag() > target.minDistance) {
             return
         }
         desired.mult(-1)
