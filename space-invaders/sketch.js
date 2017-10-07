@@ -12,6 +12,7 @@ function draw() {
     background(0)
 
     if (aliens.length == 0) {
+        bullets = []
         for (let j = 0; j < 7; j++) {
             for (let i = 0; i < 10; i++) {
                 let alien = new Alien(createVector(i * 35 + 20, 15 + j * 35))
@@ -44,7 +45,7 @@ function draw() {
                 index--;
             }
         }
-        if (ship.checkCollision(alien)) {
+        if (ship.checkCollision(alien) || alien.reachedBottom()) {
             gameOver = true
         }
         alien.render()
@@ -130,6 +131,10 @@ class Alien {
 
     switchDirection() {
         this.direction *= -1
+    }
+
+    reachedBottom() {
+        return this.position.y + this.radius > height
     }
 
     update() {
