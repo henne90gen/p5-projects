@@ -3,8 +3,8 @@ var mouseTargetForceSlider, positionTargetForceSlider
 
 function setup() {
     createCanvas(400, 400)
-    mouseTargetForceSlider = createSlider(0.01, 2, 0.5, 0.01)
-    positionTargetForceSlider = createSlider(0.01, 2, 0.5, 0.01)
+    mouseTargetForceSlider = createSlider(0.01, 2, 0.75, 0.01)
+    positionTargetForceSlider = createSlider(0.01, 2, 1, 0.01)
     for (let i = 0; i < 4*4; i++) {
         let x = i%4 * 100 + 50
         let y = Math.floor(i/4) * 100 + 50
